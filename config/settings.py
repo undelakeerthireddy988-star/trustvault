@@ -126,3 +126,29 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# ---- Deployment settings (Render) ----
+import os
+import dj_database_url
+
+ON_RENDER = "RENDER" in os.environ
+
+if ON_RENDER:
+    DEBUG = False
+    SECRET_KEY = os.environ["SECRET_KEY"]
+    _host = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "localhost")
+    ALLOWED_HOSTS = [_host]
+    CSRF_TRUSTED_ORIGINS = ["https://" + _host]
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    DATABASES = {"default": dj_database_url.config(conn_max_age=600)}
+else:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
