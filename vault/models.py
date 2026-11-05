@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 class Role(models.TextChoices):
@@ -63,7 +64,7 @@ class Grant(models.Model):
 
 class AuditEvent(models.Model):
     """One row per action. Plain ids, not links, so history survives deletions."""
-    ts = models.DateTimeField(auto_now_add=True)
+    ts = models.DateTimeField(default=timezone.now)
     actor_id = models.IntegerField(null=True, blank=True)
     actor_name = models.CharField(max_length=150, blank=True)
     action = models.CharField(max_length=40)
