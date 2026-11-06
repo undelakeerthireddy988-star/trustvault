@@ -1,0 +1,42 @@
+{% extends "vault/base.html" %}
+{% block content %}
+<div class="card">
+ <h2>{{ doc.title }}</h2>
+ <p class="muted">{{ doc.original_name }} · {{ doc.size }} bytes · owner {{ doc.owner.username }} · {{ doc.created_at|date:"d M Y H:i" }}{% if doc.category %} · {{ doc.category }}{% endif %}</p>
+ <a class="btn" href="{% url 'download' doc.pk %}">Download</a>
+ {% if can_edit %}<a class="btn" href="{% url 'edit' doc.pk %}">Edit</a>{% endif %}
+ {% if is_owner %}
+ <form method="post" action="{% url 'delete' doc.pk %}" style="display:inline" onsubmit="return confirm('Delete this document?')">{% csrf_token %}<button class="danger">Delete</button></form>
+ {% endif %}
+</div>
+{% if is_owner %}
+<div class="card">
+ <h3>Who has access</h3>
+ <table>
+  <tr><th>User</th><th>Level</th><th></th></tr>
+  {% for g in grants %}
+  <tr><td>{{ g.user.username }}</td><td>{{ g.get_level_display }}</td>
+   <td><form method="post" action="{% url 'revoke' doc.pk g.pk %}">{% csrf_token %}<button class="danger">Revoke</button></form></td></tr>
+  {% empty %}
+  <tr><td colspan="3" class="muted">Nobody else has access.</td></tr>
+  {% endfor %}
+ </table>
+ <h4>Give access</h4>
+ <form method="post" action="{% url 'share' doc.pk %}">{% csrf_token %}
+  <input name="username" placeholder="Username" required>
+  <select name="level"><option value="read">Read</option><option value="edit">Edit</option></select>
+  <button>Grant</button>
+ </form>
+</div>
+<div class="card">
+ <h3>Recent activity on this document</h3>
+ <table>
+  <tr><th>When</th><th>Who</th><th>Action</th><th>Result</th><th>Detail</th></tr>
+  {% for e in history %}
+  <tr><td>{{ e.ts|date:"d M H:i:s" }}</td><td>{{ e.actor_name }}</td><td>{{ e.action }}</td>
+   <td class="{% if e.outcome == 'denied' %}denied{% endif %}">{{ e.outcome }}</td><td>{{ e.detail }}</td></tr>
+  {% endfor %}
+ </table>
+</div>
+{% endif %}
+{% endblock %}

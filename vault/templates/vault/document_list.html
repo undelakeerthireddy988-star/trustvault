@@ -1,0 +1,28 @@
+{% extends "vault/base.html" %}
+{% block content %}
+<div class="card">
+ <h2>Your documents</h2>
+ <form method="get">
+  <input name="q" placeholder="Name" value="{{ filters.q }}">
+  <input name="owner" placeholder="Owner" value="{{ filters.owner }}">
+  <input name="category" placeholder="Category" value="{{ filters.category }}">
+  <label>From <input type="date" name="from" value="{{ filters.from }}"></label>
+  <label>To <input type="date" name="to" value="{{ filters.to }}"></label>
+  <button>Search</button> <a class="btn" href="{% url 'document_list' %}">Clear</a>
+ </form>
+</div>
+<div class="card">
+ {% if rows %}
+ <table>
+  <tr><th>Title</th><th>Owner</th><th>Category</th><th>Uploaded</th><th>Your access</th></tr>
+  {% for doc, access in rows %}
+  <tr>
+   <td><a href="{% url 'document_detail' doc.pk %}">{{ doc.title }}</a></td>
+   <td>{{ doc.owner.username }}</td><td>{{ doc.category }}</td>
+   <td>{{ doc.created_at|date:"d M Y H:i" }}</td><td>{{ access }}</td>
+  </tr>
+  {% endfor %}
+ </table>
+ {% else %}<p class="muted">No documents to show.</p>{% endif %}
+</div>
+{% endblock %}

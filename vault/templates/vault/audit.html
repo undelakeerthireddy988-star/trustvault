@@ -1,0 +1,41 @@
+{% extends "vault/base.html" %}
+{% block content %}
+<div class="card">
+ <h2>Audit log</h2>
+ {% if chain_ok %}
+  <p>Integrity check: <strong>chain intact</strong> (no row has been changed or removed).</p>
+ {% else %}
+  <p class="denied">Integrity check FAILED at event #{{ bad_id }}. The log was changed.</p>
+ {% endif %}
+ <form method="get">
+  <input name="user" placeholder="User" value="{{ f.user }}">
+  <input name="action" placeholder="Action (login, download...)" value="{{ f.action }}">
+  <select name="outcome">
+   <option value="">Any result</option>
+   <option value="allowed" {% if f.outcome == 'allowed' %}selected{% endif %}>allowed</option>
+   <option value="denied" {% if f.outcome == 'denied' %}selected{% endif %}>denied</option>
+  </select>
+  <input name="doc" placeholder="Document id" value="{{ f.doc }}" size="10">
+  <button>Filter</button>
+ </form>
+</div>
+{% if suspicious %}
+<div class="card">
+ <h3>Worth noticing: 3 or more refused attempts in the last 24 hours</h3>
+ <table>
+  <tr><th>User</th><th>Refused attempts</th></tr>
+  {% for s in suspicious %}<tr><td>{{ s.actor_name }}</td><td class="denied">{{ s.n }}</td></tr>{% endfor %}
+ </table>
+</div>
+{% endif %}
+<div class="card">
+ <table>
+  <tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Action</th><th>Result</th><th>Doc</th><th>IP</th><th>Detail</th></tr>
+  {% for e in events %}
+  <tr><td>{{ e.id }}</td><td>{{ e.ts|date:"d M Y H:i:s" }}</td><td>{{ e.actor_name }}</td><td>{{ e.action }}</td>
+   <td class="{% if e.outcome == 'denied' %}denied{% endif %}">{{ e.outcome }}</td>
+   <td>{{ e.document_id|default_if_none:"" }}</td><td>{{ e.ip|default_if_none:"" }}</td><td>{{ e.detail }}</td></tr>
+  {% endfor %}
+ </table>
+</div>
+{% endblock %}

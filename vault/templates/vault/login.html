@@ -1,0 +1,14 @@
+{% extends "vault/base.html" %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:40px auto">
+ <h2>Sign in</h2>
+ <form method="post">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {{ form.non_field_errors }}
+  <p><label>Username<br>{{ form.username }}</label></p>
+  <p><label>Password<br>{{ form.password }}</label></p>
+  <button>Sign in</button>
+ </form>
+ <p class="muted">Accounts are created by an administrator.</p>
+</div>
+{% endblock %}
