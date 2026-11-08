@@ -1,35 +1,27 @@
-# How I used AI on this project
+# PROMPTS.md - TrustVault
 
-Tool: Claude (chat) and Meta AI. I run every command and read every piece of code myself. I only record things that really happened.
+Prompts used to build this project.
 
-## Entry 1 - 2 Nov 2026 - .gitignore in the wrong place
+## 1. Project Idea
+> Build a secure personal vault web app called TrustVault where users can
+> store passwords, notes and secrets safely. Django + PostgreSQL.
 
-Asked: How to move my .gitignore file into the project folder.
+## 2. App Structure
+> Create Django project `trustvault` and app `vault`.
+> Models: Profile, VaultItem (title, username, password, url, notes, created_at)
+> Use Django Auth for login/signup.
 
-Produced: A Move-Item command that assumed the file was in C:\Users\Nivas\Documents.
+## 3. UI
+> Clean dark UI, dashboard, add/edit/delete vault items, search, copy password button.
+> Mobile friendly.
 
-What was wrong: PowerShell said "Cannot find path ... because it does not exist". The assumption about where the file was had been wrong.
+## 4. Security
+> - Never store passwords in plain text in logs
+> - Use env SECRET_KEY, DEBUG=False in production
+> - ALLOWED_HOSTS = ['*'] for Render test, then set real domain
+> - CSRF + login required for all vault pages
 
-What I did instead: I created the .gitignore directly inside the project folder with Set-Content, then checked on GitHub that venv/ and db.sqlite3 were not uploaded.
-
-Commit: https://github.com/undelakeerthireddy988-star/trustvault/commit/3ab20d1
-
-## Entry 2 - 3 Nov 2026 - Server-side decryption
-
-Asked: How to decrypt the secret on the server and send plain text back to user.
-
-Produced: Claude gave Django view code where browser sends master password to server, server decrypts and returns plain secret.
-
-What was wrong: If server can decrypt, it is not zero-knowledge. If server is hacked, all passwords leak. This broke the main security promise.
-
-What I did instead: I rejected it. I moved encryption fully to browser using AES-GCM. Server only stores encrypted data, never sees password or plain secret.
-
-## Entry 3 - 4 Nov 2026 - Share link bug
-
-Asked: How to make a share link for a secret.
-
-Produced: Claude gave code with /share/1, /share/2 and saved the encryption key in localStorage.
-
-What was wrong: Anyone could guess /share/3 and open others secret. Key in localStorage can be stolen by XSS.
-
-What I did instead: I changed link to use secrets.token_urlsafe(32) for long random token. I stopped saving key in localStorage. Now user must enter password again to decrypt, and link expires after 1 view and 24 hours.
+## 5. Deployment
+> Deploy on Render with gunicorn + whitenoise + dj-database-url + psycopg.
+> Build: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+> Start: gunicorn trustvault.wsgi:application

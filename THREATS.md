@@ -1,10 +1,31 @@
-Ways this system could be broken, what I did about each one, and which ones I knowingly accepted and why.
 
-| Threat | What I did | Status |
-| :--- | :--- | :--- |
-| Server hack - Attacker gets database | Encryption is done in browser with AES-GCM. Server only stores encrypted data. Without password, database is useless. | Fixed |
-| Share link guessed - Attacker guesses /share/1, /share/2 | Changed to long random token using secrets.token_urlsafe(32). Link expires after 1 view and after 24 hours. | Fixed |
-| Key stolen from localStorage by XSS | Stopped saving key in localStorage. User must enter password every time to decrypt. | Fixed |
-| Weak password guessed by brute-force | Used PBKDF2 with 600,000 iterations to derive key from password. Weak passwords still risky if user chooses "12345". | Partially Fixed - Accepted |
-| User loses password | No password reset for secrets. If password is lost, secrets cannot be recovered. This is accepted because zero-knowledge means even I cannot recover it. | Knowingly Accepted |
-| Render free server sleeps / slow | First load takes time on free tier. No fix yet, accepted for demo. | Knowingly Accepted |
+---
+
+### 4. `THREATS.md`
+
+```markdown
+# THREATS.md - TrustVault Security Model
+
+## What We Protect
+- User passwords, secrets, personal notes
+- User accounts / sessions
+
+## Threats & Fixes
+
+| Threat | Fix |
+| :--- | :--- |
+| Someone opens vault without login | `@login_required` on all vault views |
+| Passwords leaked in logs / GitHub | Never log passwords, use env vars, `.gitignore` for `.env` |
+| CSRF attack - fake form submit | Django `{% csrf_token %}` on all forms |
+| XSS - script in notes field | Django auto-escapes templates, don't use `\|safe` |
+| SQL Injection | Use Django ORM only, never raw SQL with user input |
+| Session hijack | `SESSION_COOKIE_SECURE=True`, `CSRF_COOKIE_SECURE=True` in prod |
+| Weak SECRET_KEY / DEBUG=True in prod | `SECRET_KEY` from env, `DEBUG=False` on Render |
+| Brute force login | Django rate-limit + strong password validators |
+| IDOR - user sees others' items | Always filter: `VaultItem.objects.filter(owner=request.user)` |
+
+## Rules
+1. Never show other user's data.
+2. Never store SECRET_KEY in code.
+3. Never set DEBUG=True on Live site.
+4. Always filter by `request.user`.
