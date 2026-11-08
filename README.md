@@ -1,8 +1,8 @@
 # 🔐 TrustVault
 
-Secure personal vault to store passwords, notes & secrets.
+Secure personal vault to store documents. owner can upload and delete, viewer can only view.
 
-**Live:** https://trustvault-xxxx.onrender.com
+**Live:** keerthi2006.pythonanywhere.com
 **Stack:** Django 6.1.2 + PostgreSQL + Gunicorn + WhiteNoise + Render
 
 ## Features
