@@ -1,7 +1,6 @@
 venv/
-db.sqlite3
-.env
-_pycache_/
+__pycache__/
 *.pyc
-storage/
-staticfiles/
+db.sqlite3
+media/
+.env

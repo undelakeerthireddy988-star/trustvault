@@ -1,18 +1,15 @@
 from django.urls import path
-
 from . import views
-
 urlpatterns = [
-    path("", views.home, name="home"),
-    path("login/", views.login_view, name="login"),
-    path("logout/", views.logout_view, name="logout"),
-    path("documents/", views.document_list, name="document_list"),
-    path("documents/upload/", views.upload, name="upload"),
-    path("documents/<int:pk>/", views.document_detail, name="document_detail"),
-    path("documents/<int:pk>/download/", views.download, name="download"),
-    path("documents/<int:pk>/edit/", views.edit, name="edit"),
-    path("documents/<int:pk>/delete/", views.delete, name="delete"),
-    path("documents/<int:pk>/share/", views.share, name="share"),
-    path("documents/<int:pk>/revoke/<int:grant_id>/", views.revoke, name="revoke"),
-    path("audit/", views.audit, name="audit"),
+    path('', views.home, name='home'),
+    path('signup/', views.signup, name='signup'),
+    path('login/', views.login, name='login'),
+    path('forgot/', views.forgot, name='forgot'),
+    path('logout/', views.logout, name='logout'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('upload/', views.upload_document, name='upload'),
+    path('profile/', views.profile, name='profile'),
+    path('delete/<int:document_id>/', views.delete_document, name='delete_document'),
+    path('about/', views.about, name='about'),
+    path('help/', views.help_page, name='help'),
 ]
