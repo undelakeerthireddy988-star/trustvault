@@ -1,87 +1,118 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.models import User, Group
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Document
 
+# 1. HOME PAGE CHUPINCHADANIKI
 def home(request):
     return render(request, 'vault/home.html')
 
-def signup(request):
+# 2. SIGNUP - Get Started click chesthe ikkada vasthundi
+def signup_view(request):
+    error = ""
     if request.method == 'POST':
-        full_name = request.POST.get('full_name')
         username = request.POST.get('username')
-        email = request.POST.get('email')
         password = request.POST.get('password')
-        confirm = request.POST.get('confirm_password')
-        if password != confirm:
-            return render(request, 'vault/signup.html', {'error': 'Passwords do not match!'})
+        role = request.POST.get('role', '').lower()
+
         if User.objects.filter(username=username).exists():
-            return render(request, 'vault/signup.html', {'error': 'Username already exists!'})
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.first_name = full_name
-        user.save()
-        return redirect('login')
-    return render(request, 'vault/signup.html')
+            error = "Username already exists. Please Login."
+        elif len(password) < 4:
+            error = "Password min 4 characters undali."
+        else:
+            user = User.objects.create_user(username=username, password=password)
+            user.groups.clear()
+            if role == 'admin':
+                user.is_superuser = True
+                user.is_staff = True
+                user.save()
+                login(request, user)
+                return redirect('/admin-dashboard/')
+            elif role == 'owner':
+                g, _ = Group.objects.get_or_create(name='Owner')
+                user.groups.add(g)
+                login(request, user)
+                return redirect('/owner/')
+            else:
+                g, _ = Group.objects.get_or_create(name='Viewer')
+                user.groups.add(g)
+                login(request, user)
+                return redirect('/viewer/')
+    return render(request, 'vault/signup.html', {'error': error})
 
-def login(request):
-    if request.method == 'POST':
-        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
-        if user is not None:
-            auth_login(request, user)
-            return redirect('dashboard')
-        return render(request, 'vault/login.html', {'error': 'Invalid username or password!'})
-    return render(request, 'vault/login.html')
-
-def forgot(request):
+# 3. LOGIN - Role check chesi pampisthundi
+def login_view(request):
+    error = ""
     if request.method == 'POST':
         username = request.POST.get('username')
-        pw = request.POST.get('password')
-        confirm = request.POST.get('confirm_password')
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return render(request, 'vault/forgot.html', {'error': 'Username not found!'})
-        if pw != confirm:
-            return render(request, 'vault/forgot.html', {'error': 'Passwords do not match!'})
-        user.set_password(pw)
-        user.save()
-        return redirect('login')
-    return render(request, 'vault/forgot.html')
+        password = request.POST.get('password')
+        role = request.POST.get('role')
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            error = "Invalid username or password."
+        elif role == 'owner' and not user.groups.filter(name='Owner').exists():
+            error = "You are not an Owner."
+        elif role == 'viewer' and not user.groups.filter(name='Viewer').exists():
+            error = "You are not a Viewer."
+        elif role == 'admin' and not user.is_superuser:
+            error = "You are not an Admin."
+        else:
+            login(request, user)
+            if role == 'owner':
+                return redirect('/owner/')
+            if role == 'viewer':
+                return redirect('/viewer/')
+            if role == 'admin':
+                return redirect('/admin-dashboard/')
+    return render(request, 'vault/login.html', {'error': error})
 
-def logout(request):
-    auth_logout(request)
-    return redirect('home')
+# 4. LOGOUT
+def logout_view(request):
+    logout(request)
+    return redirect('/')
 
-@login_required(login_url='login')
-def dashboard(request):
-    search = request.GET.get('search')
-    docs = Document.objects.filter(user=request.user)
-    if search:
-        docs = docs.filter(title__icontains=search)
-    return render(request, 'vault/dashboard.html', {'documents': docs.order_by('-uploaded_at')})
-
-@login_required(login_url='login')
-def upload_document(request):
+# 5. OWNER - Upload + Search + Delete
+@login_required(login_url='/login/')
+def owner_dashboard(request):
+    q = request.GET.get('q', '')
+    docs = Document.objects.filter(owner=request.user)
+    if q:
+        docs = docs.filter(title__icontains=q)
     if request.method == 'POST':
         title = request.POST.get('title')
         file = request.FILES.get('file')
-        if file:
-            Document.objects.create(user=request.user, title=title, file=file)
-    return redirect('dashboard')
+        if title and file:
+            Document.objects.create(owner=request.user, title=title, file=file)
+            return redirect('/owner/')
+    return render(request, 'vault/owner.html', {'docs': docs, 'q': q})
 
-@login_required(login_url='login')
-def delete_document(request, document_id):
-    if request.method == 'POST':
-        d = Document.objects.get(id=document_id, user=request.user)
-        d.file.delete()
-        d.delete()
-    return redirect('dashboard')
+@login_required(login_url='/login/')
+def owner_delete(request, doc_id):
+    doc = Document.objects.filter(id=doc_id, owner=request.user).first()
+    if doc:
+        doc.delete()
+    return redirect('/owner/')
 
-@login_required(login_url='login')
-def profile(request):
-    return render(request, 'vault/profile.html')
+# 6. VIEWER - Only Search
+@login_required(login_url='/login/')
+def viewer_dashboard(request):
+    q = request.GET.get('q', '')
+    docs = Document.objects.all()
+    if q:
+        docs = docs.filter(title__icontains=q)
+    return render(request, 'vault/viewer.html', {'docs': docs, 'q': q})
+
+# 7. ADMIN - All Users + All Docs
+@login_required(login_url='/login/')
+def admin_dashboard(request):
+    if not request.user.is_superuser:
+        return redirect('/login/')
+    users = User.objects.all()
+    docs = Document.objects.all()
+    return render(request, 'vault/admin.html', {'users': users, 'docs': docs})
 def about(request):
     return render(request, 'vault/about.html')
+
 def help_page(request):
     return render(request, 'vault/help.html')
