@@ -3,7 +3,7 @@
 Secure personal vault to store documents. owner can upload and delete, viewer can only view.
 
 **Live:** keerthi2006.pythonanywhere.com
-**Stack:** Django 6.1.2 + PostgreSQL + Gunicorn + WhiteNoise + Render
+**Stack:** Django 6.1.2 + SQLite + WhiteNoise + PythonAnwhere
 
 ## Features
 - Signup / Login / Logout
